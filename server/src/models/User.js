@@ -30,6 +30,7 @@ userSchema.methods.toPublic = function () {
     premiumUntil: this.premiumUntil,
     subscribedSubjects: this.subscribedSubjects,
     examDate: this.examDate,
+    createdAt: this.createdAt,
   };
 };
 

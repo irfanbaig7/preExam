@@ -1,17 +1,21 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../lib/api';
 import { connectSocket } from '../lib/socket';
+import Icon from './Icon';
+import useDismiss from './shell/useDismiss';
 
 export default function Bell() {
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const box = useRef(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(box, open, close);
 
   useEffect(() => {
-    api('/notifications').then((d) => { setItems(d.notifications); setUnread(d.unread); }).catch(() => {});
+    api('/notifications').then((d) => { setItems(d.notifications); setUnread(d.unread); }).catch(() => { });
     const socket = connectSocket();
     socket.on('notification', (n) => {
       setItems((prev) => [n, ...prev].slice(0, 30));
@@ -20,33 +24,28 @@ export default function Bell() {
     return () => socket.disconnect();
   }, []);
 
-  useEffect(() => {
-    const close = (e) => { if (box.current && !box.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, []);
-
   const toggle = async () => {
     const next = !open;
     setOpen(next);
     if (next && unread) {
-      await api('/notifications/read-all', { method: 'PATCH' }).catch(() => {});
+      await api('/notifications/read-all', { method: 'PATCH' }).catch(() => { });
       setUnread(0);
     }
   };
 
   return (
-    <div className="bell" ref={box}>
-      <button className="link-btn" onClick={toggle} aria-label={`Notifications, ${unread} unread`}>
-        Alerts{unread > 0 && <span className="badge">{unread}</span>}
+    <div className="menu" ref={box}>
+      <button type="button" className="icon-btn" onClick={toggle} aria-label={`Notifications, ${unread} unread`} aria-expanded={open}>
+        <Icon name="bell" />
+        {unread > 0 && <span className="badge">{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
-        <div className="bell-panel">
-          {items.length === 0 && <p className="muted pad">Nothing yet. Subscribe to a subject to hear about new papers.</p>}
+        <div className="menu-panel">
+          <div className="menu-title">Notifications</div>
+          {items.length === 0 && <p className="muted pad">Nothing yet. Follow a subject to hear about new papers.</p>}
           {items.map((n) => (
-            <Link key={n._id} href={n.link || '/dashboard'} className="bell-item" onClick={() => setOpen(false)}>
-              <strong>{n.title}</strong>
-              {n.body && <span>{n.body}</span>}
+            <Link key={n._id} href={n.link || '/dashboard'} className="menu-item" onClick={close}>
+              <span><strong>{n.title}</strong>{n.body && <small>{n.body}</small>}</span>
             </Link>
           ))}
         </div>
