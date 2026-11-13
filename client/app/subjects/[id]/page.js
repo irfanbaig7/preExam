@@ -5,6 +5,7 @@ import { api } from '../../../lib/api';
 import { useRequireAuth } from '../../../lib/auth-context';
 import TopicBars from '../../../components/TopicBars';
 import { connectSocket } from '../../../lib/socket';
+import AskAI from '../../../components/AskAI';
 
 export default function SubjectPage({ params }) {
   const { user, loading } = useRequireAuth();
@@ -57,6 +58,19 @@ export default function SubjectPage({ params }) {
       </div>
 
       <div className="panel">
+        <h2>Most repeated questions</h2>
+        <p className="muted">The same question asked in more than one year. Practise these first.</p>
+        {(analytics.repeated || []).length === 0 && <p className="muted">No repeated questions found yet. An admin can run detection from Admin, then Topic cleanup.</p>}
+        {(analytics.repeated || []).map((r) => (
+          <div className="q" key={r.questionId}>
+            {r.text}<br />
+            <small><span className="tag">{r.topic}</span>Asked in {r.years.length} years: {r.years.join(', ')}{r.marks ? `, ${r.marks} marks` : ''}</small>
+            <AskAI questionId={r.questionId} />
+          </div>
+        ))}
+      </div>
+
+      <div className="panel">
         <h2>Topics by how often they repeat</h2>
         <p className="muted">Select a topic to see its most recent questions.</p>
         <TopicBars topics={analytics.topics} active={topic} onPick={setTopic} />
@@ -67,8 +81,8 @@ export default function SubjectPage({ params }) {
         {(shown ? [shown] : analytics.important.slice(0, 5)).map((group) => (
           <div key={group.topic} style={{ marginBottom: '.75rem' }}>
             {!shown && <h3>{group.topic}</h3>}
-            {group.questions.map((q, i) => (
-              <div className="q" key={i}>{q.text}<br /><small>{q.year}{q.marks ? `, ${q.marks} marks` : ''}</small></div>
+            {group.questions.map((q) => (
+              <div className="q" key={q._id}>{q.text}<br /><small>{q.year}{q.marks ? `, ${q.marks} marks` : ''}</small><AskAI questionId={q._id} /></div>
             ))}
           </div>
         ))}
@@ -100,7 +114,7 @@ export default function SubjectPage({ params }) {
         {analytics.papers.length === 0 ? <p className="muted">No approved papers yet.</p> : (
           <div className="table-scroll"><table>
             <thead><tr><th>Year</th><th>Type</th><th>Questions</th></tr></thead>
-            <tbody>{analytics.papers.map((p, i) => <tr key={i}><td>{p.year}</td><td>{p.examType}</td><td>{p.questionCount}</td></tr>)}</tbody>
+            <tbody>{analytics.papers.map((p) => <tr key={p._id}><td><Link href={`/papers/${p._id}`}>{p.year}</Link></td><td>{p.examType}</td><td>{p.questionCount}</td></tr>)}</tbody>
           </table></div>
         )}
       </div>

@@ -87,7 +87,7 @@ export default function Dashboard() {
                 <input type="checkbox" role="switch" checked={s.subscribed} onChange={() => toggleSub(s._id)} />
                 <span className="slider" aria-hidden="true" />
                 <span>{s.subscribed ? 'Alerts on for new papers' : 'Alerts off'}</span>
-              </label>            
+              </label>
             </div>
           ))}
           {subjects.length === 0 && <p className="muted">No subjects found. Add the first one, then upload its papers.</p>}
@@ -115,8 +115,7 @@ export default function Dashboard() {
                 {papers.map((p) => (
                   <tr key={p._id}>
                     <td>{p.subject ? p.subject.name : ''}</td>
-                    <td>{p.year} {p.examType === 'backlog' ? '(backlog)' : ''}</td>
-                    <td><span className={`tag ${p.status}`}>{p.status}</span>{p.failReason && <div className="field-error">{p.failReason}</div>}</td>
+                    <td><Link href={`/papers/${p._id}`}>{p.year}</Link> {p.examType === 'backlog' ? '(backlog)' : ''}</td>                    <td><span className={`tag ${p.status}`}>{p.status}</span>{p.failReason && <div className="field-error">{p.failReason}</div>}</td>
                     <td><span className={`tag ${p.moderation}`}>{p.moderation}</span></td>
                     <td>{p.questionCount}</td>
                   </tr>

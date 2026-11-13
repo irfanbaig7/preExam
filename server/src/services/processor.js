@@ -8,6 +8,7 @@ const { splitQuestions } = require('./parser');
 const { tagQuestions } = require('./ai');
 const { invalidateSubject } = require('./analytics');
 const { notify, notifySubscribers } = require('./notify');
+const { detectRepeats } = require('./repeats');
 
 async function processPaper({ paperId }) {
   const paper = await Paper.findById(paperId).select('+rawText');
@@ -28,7 +29,8 @@ async function processPaper({ paperId }) {
   }
 
   const subject = await Subject.findById(paper.subject);
-  const tags = await tagQuestions(items, subject ? subject.name : 'General');
+  const existingTopics = await Question.distinct('topic', { subject: paper.subject, paper: { $ne: paper._id } });
+  const tags = await tagQuestions(items, subject ? subject.name : 'General', existingTopics);
   const approved = paper.moderation === 'approved';
 
   await Question.deleteMany({ paper: paper._id });
@@ -58,13 +60,16 @@ async function processPaper({ paperId }) {
     link: `/subjects/${paper.subject}`,
   });
   if (approved) {
-    await notifySubscribers(paper.subject, {
-      title: `New paper: ${label}`,
-      body: `${items.length} questions were added. Check what changed in topic trends.`,
-      link: `/subjects/${paper.subject}`,
-    });
-  }
+  detectRepeats(paper.subject).catch(() => { });
+
+  await notifySubscribers(paper.subject, {
+    title: `New paper: ${label}`,
+    body: `${items.length} questions were added. Check what changed in topic trends.`,
+    link: `/subjects/${paper.subject}`,
+  });
 }
+}
+
 
 async function onFail({ paperId }, err) {
   const paper = await Paper.findByIdAndUpdate(paperId, { status: 'failed', failReason: err.message }, { new: true });
@@ -73,7 +78,7 @@ async function onFail({ paperId }, err) {
       title: 'Paper could not be processed',
       body: err.message,
       link: '/dashboard',
-    }).catch(() => {});
+    }).catch(() => { });
   }
 }
 

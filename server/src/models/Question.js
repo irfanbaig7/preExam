@@ -12,6 +12,11 @@ const questionSchema = new Schema(
     difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
     // mirrors paper.moderation === 'approved' so analytics/search stay a single-collection query
     approved: { type: Boolean, default: false },
+    // cached AI explanation (generated once, shared by everyone)
+    aiAnswer: { type: String, select: false },
+    aiAnswerAt: Date,
+    // questions that ask the same thing share one clusterId (set by repeat detection)
+    clusterId: { type: String, index: true },
   },
   { timestamps: true }
 );

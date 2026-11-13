@@ -20,7 +20,7 @@ async function main() {
 
   server.listen(env.PORT, () => {
     console.log(`[server] http://localhost:${env.PORT}`);
-    console.log(`[server] AI: ${env.ANTHROPIC_API_KEY ? 'Claude' : 'fallback (no ANTHROPIC_API_KEY)'} | cache: ${env.REDIS_URL ? 'redis' : 'memory'} | payments: ${env.razorpayEnabled ? 'razorpay' : 'demo'}`);
+    console.log(`[server] AI: ${ env.aiEnabled ? env.AI_PROVIDER : 'fallback (no AI key)'} | cache: ${env.REDIS_URL ? 'redis' : 'memory'} | payments: ${env.razorpayEnabled ? 'razorpay' : 'demo'}`);
   });
 }
 

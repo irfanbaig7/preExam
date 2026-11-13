@@ -10,6 +10,11 @@ const env = {
   ADMIN_EMAIL: (process.env.ADMIN_EMAIL || 'admin@pyq.local').toLowerCase(),
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
   ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5',
+  AI_PROVIDER: (process.env.AI_PROVIDER || 'gemini').toLowerCase(),
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-flash-latest',
+  GROQ_API_KEY: process.env.GROQ_API_KEY || '',
+  GROQ_MODEL: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
   REDIS_URL: process.env.REDIS_URL || '',
   SMTP_HOST: process.env.SMTP_HOST || '',
   SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
@@ -23,5 +28,7 @@ const env = {
 };
 
 env.razorpayEnabled = Boolean(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET);
+env.aiEnabled = Boolean(env.GEMINI_API_KEY || env.GROQ_API_KEY || env.ANTHROPIC_API_KEY);
+
 
 module.exports = env;

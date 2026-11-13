@@ -28,6 +28,7 @@ function createApp() {
   app.use('/api/auth', require('./routes/auth'));
   app.use('/api/subjects', require('./routes/subjects'));
   app.use('/api/papers', require('./routes/papers'));
+  app.use('/api/questions', require('./routes/questions'));
   app.use('/api/search', require('./routes/search'));
   app.use('/api/notifications', require('./routes/notifications'));
   app.use('/api/payments', require('./routes/payments'));

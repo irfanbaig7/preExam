@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useRequireAuth } from '../../lib/auth-context';
+import Link from 'next/link';
 
 export default function Admin() {
   const { user, loading } = useRequireAuth('admin');
@@ -48,6 +49,7 @@ export default function Admin() {
   return (
     <>
       <h1 style={{ fontSize: '2rem' }}>Admin</h1>
+      <p><Link className="btn ghost small" href="/admin/topics">Topic cleanup</Link></p>
       {error && <div className="alert err">{error}</div>}
       {stats && (
         <div className="stats">

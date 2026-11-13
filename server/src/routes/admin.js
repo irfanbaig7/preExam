@@ -10,6 +10,10 @@ const { ApiError, wrap } = require('../utils/http');
 const queue = require('../services/queue');
 const { invalidateSubject } = require('../services/analytics');
 const { notify, notifySubscribers } = require('../services/notify');
+const mongoose = require('mongoose');
+const { suggestTopicMerges } = require('../services/ai');
+const { detectRepeats } = require('../services/repeats');
+
 
 const router = Router();
 router.use(requireAuth, requireRole('admin'));
@@ -55,6 +59,7 @@ router.patch('/papers/:id/moderate', validate(moderateSchema), wrap(async (req, 
     link: `/subjects/${paper.subject._id}`,
   });
   if (approve && paper.status === 'ready') {
+    detectRepeats(paper.subject._id).catch(() => { });
     await notifySubscribers(paper.subject._id, {
       title: `New paper: ${label}`,
       body: `${paper.questionCount} questions were added.`,
@@ -83,6 +88,56 @@ router.patch('/users/:id/role', validate(roleSchema), wrap(async (req, res) => {
   const user = await User.findByIdAndUpdate(req.params.id, { role: req.body.role }, { new: true });
   if (!user) throw new ApiError(404, 'User not found');
   res.json({ user: user.toPublic() });
+}));
+
+
+// ---- Topic cleanup ----
+const subjectOid = (req) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'Subject not found');
+  return new mongoose.Types.ObjectId(req.params.id);
+};
+
+const topicCounts = (subject) =>
+  Question.aggregate([
+    { $match: { subject } },
+    { $group: { _id: '$topic', count: { $sum: 1 }, years: { $addToSet: '$year' } } },
+    { $sort: { count: -1, _id: 1 } },
+  ]);
+
+router.get('/subjects/:id/topics', wrap(async (req, res) => {
+  const rows = await topicCounts(subjectOid(req));
+  res.json({ topics: rows.map((r) => ({ topic: r._id, count: r.count, years: r.years.length })) });
+}));
+
+router.post('/subjects/:id/topics/suggest', wrap(async (req, res) => {
+  const subject = subjectOid(req);
+  const sub = await Subject.findById(subject).select('name').lean();
+  if (!sub) throw new ApiError(404, 'Subject not found');
+  const rows = await topicCounts(subject);
+  const groups = await suggestTopicMerges(sub.name, rows.map((r) => ({ topic: r._id, count: r.count })));
+  if (!groups) throw new ApiError(503, 'AI is busy or not set up. Try again in a minute.');
+  res.json({ groups });
+}));
+
+const mergeSchema = z.object({
+  from: z.array(z.string().trim().min(1).max(60)).min(1).max(50),
+  to: z.string().trim().min(2).max(60),
+});
+
+// Merge and rename are the same operation: move every question of the "from" topics to "to"
+router.post('/subjects/:id/topics/merge', validate(mergeSchema), wrap(async (req, res) => {
+  const subject = subjectOid(req);
+  const { from, to } = req.body;
+  const result = await Question.updateMany({ subject, topic: { $in: from } }, { topic: to });
+  await invalidateSubject(subject);
+  res.json({ updated: result.modifiedCount });
+}));
+
+router.post('/subjects/:id/repeats', wrap(async (req, res) => {
+  const subject = subjectOid(req);
+  const r = await detectRepeats(subject);
+  if (r.busy) throw new ApiError(409, 'Detection is already running for this subject');
+  res.json({ groups: r.groups, failedTopics: r.failedTopics });
 }));
 
 module.exports = router;
