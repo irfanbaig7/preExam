@@ -8,7 +8,7 @@ let io = null;
 const history = new Map(); // subjectId -> last 50 chat messages (memory only)
 
 function init(httpServer) {
-  io = new Server(httpServer, { cors: { origin: env.CLIENT_URL, credentials: true } });
+  io = new Server(httpServer, { cors: { origin: env.clientOrigins, credentials: true } });
 
   io.use((socket, next) => {
     try {

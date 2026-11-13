@@ -8,6 +8,7 @@ const cron = require('./services/cron');
 
 async function main() {
   if (env.JWT_ACCESS_SECRET.startsWith('change-me') || env.JWT_ACCESS_SECRET.startsWith('dev-')) {
+    if (env.isProd) throw new Error('JWT secrets are still defaults. Set JWT_ACCESS_SECRET and JWT_REFRESH_SECRET.');
     console.warn('[warn] JWT secrets are still defaults. Change them in server/.env before deploying.');
   }
   await connectDB();
@@ -20,7 +21,7 @@ async function main() {
 
   server.listen(env.PORT, () => {
     console.log(`[server] http://localhost:${env.PORT}`);
-    console.log(`[server] AI: ${ env.aiEnabled ? env.AI_PROVIDER : 'fallback (no AI key)'} | cache: ${env.REDIS_URL ? 'redis' : 'memory'} | payments: ${env.razorpayEnabled ? 'razorpay' : 'demo'}`);
+    console.log(`[server] AI: ${env.aiEnabled ? env.AI_PROVIDER : 'fallback (no AI key)'} | cache: ${env.REDIS_URL ? 'redis' : 'memory'} | payments: ${env.razorpayEnabled ? 'razorpay' : 'demo'}`);
   });
 }
 

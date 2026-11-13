@@ -12,9 +12,9 @@ const env = {
   ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5',
   AI_PROVIDER: (process.env.AI_PROVIDER || 'gemini').toLowerCase(),
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
-  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-flash-latest',
+  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
   GROQ_API_KEY: process.env.GROQ_API_KEY || '',
-  GROQ_MODEL: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+  GROQ_MODEL: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
   REDIS_URL: process.env.REDIS_URL || '',
   SMTP_HOST: process.env.SMTP_HOST || '',
   SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
@@ -28,7 +28,9 @@ const env = {
 };
 
 env.razorpayEnabled = Boolean(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET);
+env.isProd = env.NODE_ENV === 'production';
+// CLIENT_URL can hold several origins separated by commas, trailing slashes are ignored
+env.clientOrigins = env.CLIENT_URL.split(',').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
 env.aiEnabled = Boolean(env.GEMINI_API_KEY || env.GROQ_API_KEY || env.ANTHROPIC_API_KEY);
-
 
 module.exports = env;

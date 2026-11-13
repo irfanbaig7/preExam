@@ -14,8 +14,9 @@ const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
 
 const cookieOpts = {
   httpOnly: true,
-  sameSite: 'lax',
-  secure: env.NODE_ENV === 'production',
+  // frontend (Vercel) and API (Render) are different sites, so production needs SameSite=None + Secure
+  sameSite: env.isProd ? 'none' : 'lax',
+  secure: env.isProd,
   path: '/api/auth',
   maxAge: 7 * 24 * 3600 * 1000,
 };
@@ -76,7 +77,8 @@ router.post('/logout', wrap(async (req, res) => {
       await User.updateOne({ _id: p.sub }, { $unset: { refreshHash: 1 } });
     } catch { /* already invalid */ }
   }
-  res.clearCookie('refresh_token', { path: '/api/auth' });
+  const { maxAge, ...clearOpts } = cookieOpts; // clearing needs the same attributes the cookie was set with
+  res.clearCookie('refresh_token', clearOpts);
   res.json({ ok: true });
 }));
 
